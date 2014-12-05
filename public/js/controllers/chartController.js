@@ -108,11 +108,10 @@ function chartController($scope) {
             mom = _30daysAgo;
             var indexPassedData = 0;
             if (options.fromDate == undefined || options.untilDate == undefined) {
-                //get 30 days of data
+                //get 30 days of data by default
                 for (var i = 0; i < 30; i++) {
-                    if (indexPassedData < passedData.length) {
+                    if (indexPassedData < passedData.length)
                         dateIndexPassedData = moment(passedData[indexPassedData].date); //date current API object
-                    }
                     else
                         dateIndexPassedData = moment(0); //fake anterior date. (1970) to continue looping even if there are no more items in the data sent back by the API.
                     if ($scope.areSameDays(dateIndexPassedData, mom)) { 
@@ -130,7 +129,51 @@ function chartController($scope) {
                 $scope.addSeries("Uniques", dataUniques);
                 $scope.$apply();
             } else {
-                //45 dates range accepted (verify that)
+                var fromDate = moment(options.fromDate);
+                var untilDate = moment(options.untilDate);
+                var _45daysAgo = untilDate.subtract(45, 'days');
+                if (fromDate > _45daysAgo) {
+                    //it's ok 
+                    $scope.highchartsNG.xAxis = {};
+                    $scope.highchartsNG.options.chart.type = 'line';
+                    $scope.highchartsNG.xAxis.title = "Days";
+                    $scope.highchartsNG.xAxis.type = "datetime";
+                    var dataLoads = [];
+                    var dataUniques = [];
+                    var indexPassedData = 0;
+                    var currentMom = fromDate;
+                    var lastMom = untilDate;
+                    var now = moment();
+                    console.log("current : ", currentMom);
+                    console.log(lastMom.unix());
+                    console.log("until ", lastMom);
+                    console.log(lastMom.unix());
+                    //problem here
+                    
+                    while (currentMom.isBefore(untilDate)) {
+                        console.log("HEYYYYY");
+                        if (indexPassedData < passedData.length) 
+                            dateIndexPassedData = moment(passedData[indexPassedData].date); //date current API object
+                        else
+                            dateIndexPassedData = moment(0); //fake anterior date. (1970) to continue looping even if there are no more items in the data sent back by the API.
+                        if ($scope.areSameDays(dateIndexPassedData, currentMom)) { 
+                            dataLoads.push([Date.UTC(currentMom.year(), currentMom.months(), currentMom.date()), passedData[indexPassedData].loads]);
+                            dataUniques.push([Date.UTC(currentMom.year(), currentMom.months(), currentMom.date()), passedData[indexPassedData].uniques]);
+                            indexPassedData++;
+                        } else {
+                            dataLoads.push([Date.UTC(currentMom.year(), currentMom.months(), currentMom.date()), 0]);
+                            dataUniques.push([Date.UTC(currentMom.year(), currentMom.months(), currentMom.date()), 0]);
+                        }
+                        currentMom = currentMom.add(1, 'days');
+                    }
+                    $scope.removeSeries();
+                    $scope.addSeries("Loads", dataLoads);
+                    $scope.addSeries("Uniques", dataUniques);
+                    $scope.$apply();
+                } else {
+                    //we don't accept and we return an error
+
+                }
                 //parse data
                 //remove series
                 //add to series
